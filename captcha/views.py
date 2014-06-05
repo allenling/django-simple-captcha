@@ -1,4 +1,4 @@
-from captcha.conf import settings
+﻿from captcha.conf import settings
 from captcha.helpers import captcha_image_url
 from captcha.models import CaptchaStore
 from django.http import HttpResponse, Http404
@@ -17,7 +17,7 @@ except ImportError:
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
-    import Image
+    from PIL import Image
     import ImageDraw
     import ImageFont
 
@@ -27,15 +27,6 @@ except ImportError:
     from django.utils import simplejson as json
 
 NON_DIGITS_RX = re.compile('[^\d]')
-# Distance of the drawn text from the top of the captcha image
-from_top = 4
-
-
-def getsize(font, text):
-    if hasattr(font, 'getoffset'):
-        return [x + y for x, y in zip(font.getsize(text), font.getoffset(text))]
-    else:
-        return font.getsize(text)
 
 
 def captcha_image(request, key, scale=1):
@@ -47,8 +38,8 @@ def captcha_image(request, key, scale=1):
     else:
         font = ImageFont.load(settings.CAPTCHA_FONT_PATH)
 
-    size = getsize(font, text)
-    size = (size[0] * 2, int(size[1] * 1.4))
+    size = font.getsize(text)
+    size = (size[0] * 2, int(size[1] * 1.2))
     image = Image.new('RGB', size, settings.CAPTCHA_BACKGROUND_COLOR)
 
     try:
@@ -65,7 +56,7 @@ def captcha_image(request, key, scale=1):
             charlist.append(char)
     for char in charlist:
         fgimage = Image.new('RGB', size, settings.CAPTCHA_FOREGROUND_COLOR)
-        charimage = Image.new('L', getsize(font, ' %s ' % char), '#000000')
+        charimage = Image.new('L', font.getsize(' %s ' % char), '#000000')
         chardraw = ImageDraw.Draw(charimage)
         chardraw.text((0, 0), ' %s ' % char, font=font, fill='#ffffff')
         if settings.CAPTCHA_LETTER_ROTATION:
@@ -76,7 +67,7 @@ def captcha_image(request, key, scale=1):
         charimage = charimage.crop(charimage.getbbox())
         maskimage = Image.new('L', size)
 
-        maskimage.paste(charimage, (xpos, from_top, xpos + charimage.size[0], from_top + charimage.size[1]))
+        maskimage.paste(charimage, (xpos, 4, xpos + charimage.size[0], 4 + charimage.size[1]))
         size = maskimage.size
         image = Image.composite(fgimage, image, maskimage)
         xpos = xpos + 2 + charimage.size[0]
